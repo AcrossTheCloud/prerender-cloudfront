@@ -2,13 +2,6 @@ Parameters:
   PrerenderToken:
     Type: String
 Resources:
-  WebBucket:
-    Type: "AWS::S3::Bucket"
-    Properties:
-      AccessControl: PublicRead
-      WebsiteConfiguration:
-        ErrorDocument: index.html
-        IndexDocument: index.html
   LambdaEdgeExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -64,7 +57,7 @@ Resources:
                 callback(null, request);
             };
       Runtime: "nodejs14.x"
-  SetPrerenderHeaderVersion3:
+  SetPrerenderHeaderVersion1:
     Type: "AWS::Lambda::Version"
     Properties:
       FunctionName:
@@ -93,7 +86,7 @@ Resources:
                          readTimeout: 20,
                          keepaliveTimeout: 5,
                          customHeaders: {},
-                         sslProtocols: ['TLSv1.2', 'TLSv1.3'],
+                         sslProtocols: ['TLSv1.2'],
                          path: '/https%3A%2F%2F' + request.headers['x-prerender-host'][0].value
                      }
                  };
@@ -107,40 +100,3 @@ Resources:
       FunctionName:
         Ref: "RedirectToPrerender"
       Description: "RedirectToPrerender"
-  CloudFront:
-    Type: "AWS::CloudFront::Distribution"
-    Properties:
-      DistributionConfig:
-        DefaultCacheBehavior:
-          Compress: true
-          # NOTE: we let cloudfront cache heavily the resurces of the SPA. Your deploy
-          #       step will need to include an invalidation of the cloudfromt cache.
-          #       The requests to prerender.io are NOT cached thanks to the X-Prerender-Cachebuster
-          #       header.
-          MinTTL: 31536000
-          DefaultTTL: 31536000
-          ForwardedValues:
-            QueryString: false
-            Headers:
-              - "X-Prerender-Token"
-              - "X-Prerender-Host"
-              - "X-Prerender-Cachebuster"
-          TargetOriginId: origin
-          ViewerProtocolPolicy : allow-all
-          LambdaFunctionAssociations:
-            - EventType: viewer-request
-              LambdaFunctionARN: !Join [ ":", [ !GetAtt [SetPrerenderHeader, Arn], !GetAtt [SetPrerenderHeaderVersion3, Version] ] ]
-            - EventType: origin-request
-              LambdaFunctionARN: !Join [ ":", [ !GetAtt [RedirectToPrerender, Arn], !GetAtt [RedirectToPrerenderVersion1, Version] ] ]
-        Enabled: true
-        CustomErrorResponses:
-          - ErrorCode: 404
-            ResponseCode: 200
-            ResponsePagePath: /index.html
-        HttpVersion: http2
-        Origins:
-          - CustomOriginConfig:
-              OriginProtocolPolicy: http-only
-            DomainName: !Select [2, !Split [ '/', !GetAtt [WebBucket, WebsiteURL]]]
-            Id: origin
-        PriceClass: PriceClass_All
