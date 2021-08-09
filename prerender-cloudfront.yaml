@@ -143,4 +143,4 @@ Resources:
               OriginProtocolPolicy: http-only
             DomainName: !Select [2, !Split [ '/', !GetAtt [WebBucket, WebsiteURL]]]
             Id: origin
-        PriceClass: PriceClass_100
+        PriceClass: PriceClass_All
