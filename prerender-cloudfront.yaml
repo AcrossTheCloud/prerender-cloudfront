@@ -93,7 +93,7 @@ Resources:
                          readTimeout: 20,
                          keepaliveTimeout: 5,
                          customHeaders: {},
-                         sslProtocols: ['TLSv1', 'TLSv1.1'],
+                         sslProtocols: ['TLSv1.2', 'TLSv1.3'],
                          path: '/https%3A%2F%2F' + request.headers['x-prerender-host'][0].value
                      }
                  };
